@@ -71,6 +71,24 @@ function afterPowerChange(truck: Truck, juice: JuiceSystem): ReturnType<typeof c
   return checkEvolution(truck, juice, x, TRUCK_SCREEN_Y);
 }
 
+/**
+ * 게이트 연산에 따른 "손맛" 연출 — 곱셈이 성장의 주 동력이므로 가장 화려하게 대우한다.
+ * 곱셈: 배수에 비례한 순간 부스트 + 화면 중앙 대형 배너(×N) + 컬러 플래시 + 큰 배수는 짧은 히트스톱.
+ * 덧셈(이득): 약한 부스트만. 함정(sub/div): 부스트 없음.
+ */
+function applyGateJuice(juice: JuiceSystem, spec: GateSpec) {
+  if (spec.op === 'mul') {
+    const m = spec.value;
+    juice.addBoost(Math.min(1.0, 0.3 + m * 0.14)); // ×2 → ~0.58, ×3 → ~0.72 ...
+    juice.showBanner(`×${m}`, '#3ddc63', 560);
+    juice.flash('#3ddc63', 180);
+    if (m >= 4) juice.triggerHitStop(55);
+    else if (m >= 3) juice.triggerHitStop(35);
+  } else if (spec.op === 'add') {
+    juice.addBoost(0.22);
+  }
+}
+
 export function resolveSegment(segment: TrackSegment, truck: Truck, juice: JuiceSystem): ResolveResult {
   const laneIdx = clampLaneIndex(truck.lane);
   const x = laneCenterX(laneIdx);
@@ -92,6 +110,7 @@ export function resolveSegment(segment: TrackSegment, truck: Truck, juice: Juice
       popupAt(juice, laneIdx, gateLabel(spec), gateColor(spec.op));
       juice.shake(BALANCE.shakeGate);
       juice.effects.spawnBurst(x, y, spec.op === 'mul' ? 18 : 10, gateColor(spec.op), [50, 160], [300, 550]);
+      applyGateJuice(juice, spec);
       evolveEvent = afterPowerChange(truck, juice);
       break;
     }
@@ -116,6 +135,7 @@ export function resolveSegment(segment: TrackSegment, truck: Truck, juice: Juice
           juice.shake(BALANCE.shakeEnemyKill);
           juice.triggerHitStop(BALANCE.hitStopEnemy);
           juice.effects.spawnBurst(x, y, 26, '#ffd23d', [80, 260], [350, 700], 'spark');
+          juice.addBoost(0.35);
           evolveEvent = afterPowerChange(truck, juice);
         } else {
           return die();
@@ -156,6 +176,9 @@ export function resolveSegment(segment: TrackSegment, truck: Truck, juice: Juice
         juice.shake(BALANCE.shakeEvolve);
         juice.triggerHitStop(90);
         juice.effects.spawnBurst(x, y, 40, '#ffd23d', [100, 320], [450, 900], 'spark');
+        juice.addBoost(1.0);
+        juice.showBanner(`JACKPOT ×${segment.multiplier}`, '#ffd23d', 720);
+        juice.flash('#ffd23d', 240);
       } else {
         const trap = segment.trapOps[laneIdx];
         if (trap) {

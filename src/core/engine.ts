@@ -39,6 +39,9 @@ export class Engine {
 
   private tierCard: TierCardState | null = null;
 
+  /** HUD에 표시되는 전력 — 실제 전력을 향해 촤르륵 굴러가는 롤링 카운터 값. */
+  private displayPower: number = BALANCE.startingPower;
+
   private lastTs = 0;
   private elapsedMs = 0;
 
@@ -74,6 +77,7 @@ export class Engine {
     this.elapsedMs += realDt;
 
     this.updateTierCard(realDt);
+    this.updateDisplayPower(realDt);
 
     if (this.state === 'playing') {
       const dt = this.juice.step(realDt) * this.debugSpeedMult;
@@ -86,6 +90,31 @@ export class Engine {
     requestAnimationFrame(this.loop);
   };
 
+  /**
+   * 표시 전력을 실제 전력으로 지수 보간해 "숫자가 촤르륵 올라가는" 느낌을 준다.
+   * 전력이 기하급수라 선형 보간이 아닌 로그 공간 보간을 써야 큰 곱셈에서도 자연스럽게 굴러간다.
+   */
+  private updateDisplayPower(realDt: number) {
+    const target = this.truck.power;
+    if (this.displayPower === target) return;
+    if (target <= 0) {
+      this.displayPower = target;
+      return;
+    }
+    // 감소(강등/함정)는 즉각 반영해 위험을 또렷하게, 증가(이득)만 롤링.
+    if (target < this.displayPower) {
+      this.displayPower = target;
+      return;
+    }
+    const k = 1 - Math.pow(0.0025, realDt / 1000); // 약 0.15/16ms
+    const cur = Math.max(1, this.displayPower);
+    const logCur = Math.log(cur);
+    const logTarget = Math.log(Math.max(1, target));
+    const next = Math.exp(logCur + (logTarget - logCur) * k);
+    // 충분히 가까우면 스냅
+    this.displayPower = next >= target * 0.995 ? target : next;
+  }
+
   private updateTierCard(realDt: number) {
     if (!this.tierCard) return;
     this.tierCard.elapsed += realDt;
@@ -96,7 +125,8 @@ export class Engine {
     const stage = STAGES[this.stageIndex];
     const targetLane = this.input.getTargetLane();
     this.truck.update(dt, targetLane);
-    this.truck.distance += stage.scrollSpeed * (dt / 1000);
+    // 게이트/처치 시 순간 부스트로 스크롤 속도가 확 붙었다가 감쇠 — "커진다 = 빨라진다" 체감.
+    this.truck.distance += stage.scrollSpeed * this.juice.boostMultiplier * (dt / 1000);
 
     while (this.segPointer < this.segments.length) {
       const seg = this.segments[this.segPointer];
@@ -145,6 +175,7 @@ export class Engine {
     this.truck = new Truck();
     this.juice.reset();
     this.tierCard = null;
+    this.displayPower = this.truck.power;
     this.rng = new Rng((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0);
     this.loadStage(0);
   }
@@ -190,7 +221,7 @@ export class Engine {
     const stage = STAGES[Math.min(this.stageIndex, STAGES.length - 1)];
     const total = stageTotalDistance(stage);
     const hud: HudParams = {
-      power: this.truck.power,
+      power: this.displayPower,
       tierName: this.truck.tier.name,
       stageName: stage.biomeName,
       stageIndex: this.stageIndex,
@@ -239,6 +270,7 @@ export class Engine {
 
   forcePower(v: number) {
     this.truck.power = v;
+    this.displayPower = v;
     checkEvolution(this.truck, this.juice, laneCenterX(this.truck.lane), TRUCK_SCREEN_Y);
   }
 
