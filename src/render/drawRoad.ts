@@ -1,6 +1,6 @@
 import { BiomePalette } from '../data/stages';
 import { VIEWPORT } from '../data/balance';
-import { HORIZON_Y, LANE_WIDTH, MAX_DRAW_DISTANCE, perspectiveScale, TRACK_WIDTH, TRUCK_SCREEN_Y, VANISH_X } from './layout';
+import { HORIZON_Y, LANE_WIDTH, MAX_DRAW_DISTANCE, NEAR_D, surfaceScale, TRACK_WIDTH, TRUCK_SCREEN_Y, VANISH_X } from './layout';
 
 function mod(a: number, n: number): number {
   return ((a % n) + n) % n;
@@ -173,13 +173,15 @@ function drawNeonLanes(ctx: CanvasRenderingContext2D, color: string, truckDistan
 
   for (let boundary = 1; boundary < 3; boundary++) {
     const offsetAtCamera = LANE_WIDTH * boundary - TRACK_WIDTH / 2;
+    // 화면 바닥(NEAR_D, 음수)보다 낮은 격자점에서 시작해 근거리 도로에도 점선이 이어지게 한다.
     let d0 = -phase;
+    while (d0 > NEAR_D) d0 -= period;
     while (d0 < MAX_DRAW_DISTANCE) {
-      const dA = Math.max(0, d0);
-      const dB = Math.max(0, d0 + dashLen);
-      if (dB > 0) {
-        const sA = perspectiveScale(dA);
-        const sB = perspectiveScale(dB);
+      const dA = Math.max(NEAR_D, d0);
+      const dB = d0 + dashLen;
+      if (dB > NEAR_D) {
+        const sA = surfaceScale(dA);
+        const sB = surfaceScale(dB);
         const ax = VANISH_X + offsetAtCamera * sA;
         const ay = HORIZON_Y + (TRUCK_SCREEN_Y - HORIZON_Y) * sA;
         const bx = VANISH_X + offsetAtCamera * sB;

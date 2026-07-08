@@ -4,6 +4,7 @@ import { TrackSegment } from '../entities/segment';
 import { Truck } from '../entities/truck';
 import { JuiceSystem } from '../systems/juice';
 import { drawRoad } from './drawRoad';
+import { drawRoadside } from './drawRoadside';
 import { drawAllSegments } from './drawSegments';
 import { drawTruck } from './drawTruck';
 import { drawParticles, drawPopups } from './drawEffects';
@@ -28,6 +29,7 @@ export function renderWorld(ctx: CanvasRenderingContext2D, p: RenderParams) {
   ctx.translate(p.juice.shakeX, p.juice.shakeY);
 
   drawRoad(ctx, p.palette, p.truck.distance);
+  drawRoadside(ctx, p.palette, p.truck.distance);
   drawAllSegments(ctx, p.segments, p.truck.distance, 'shape');
   drawSpeedLines(ctx, p.juice, p.elapsedMs);
   drawTruck(ctx, p.truck, p.truck.tier, p.elapsedMs);

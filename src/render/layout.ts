@@ -14,7 +14,7 @@ export const TRUCK_SCREEN_Y = VIEWPORT.height * 0.8;
 export const VANISH_X = VIEWPORT.width / 2;
 
 /** 원근감의 "급격함"을 조절하는 초점 거리. 작을수록 앞이 확 커지고 뒤가 확 뭉치는 극적인 원근이 된다. */
-const FOCAL = 340;
+export const FOCAL = 340;
 
 /** 이 거리보다 먼 세그먼트는 소실점에 뭉개져 그릴 필요가 없다. */
 export const MAX_DRAW_DISTANCE = 3400;
@@ -23,6 +23,31 @@ export const MAX_DRAW_DISTANCE = 3400;
 export function perspectiveScale(d: number): number {
   const dist = Math.max(0, d);
   return FOCAL / (FOCAL + dist);
+}
+
+/**
+ * 언클램프 원근 축척 — 카메라보다 앞쪽(d<0, 화면 트럭 위치보다 아래)까지 그릴 수 있게 clamp를 하지 않는다.
+ * 도로 표면 마킹(차선)과 길가 오브젝트를 화면 바닥까지 자연스럽게 잇기 위해 사용한다.
+ * (게임플레이 판정은 여전히 clamp된 perspectiveScale/projectTrackPoint를 쓴다.)
+ */
+export function surfaceScale(d: number): number {
+  return FOCAL / (FOCAL + d); // d > -FOCAL 에서 유효(그 아래로는 내려갈 일이 없다)
+}
+
+/** 화면 맨 아래(y=VIEWPORT.height)에 대응하는 근거리 d(음수). 차선/길가 오브젝트의 시작점. */
+export const NEAR_D = FOCAL * ((TRUCK_SCREEN_Y - HORIZON_Y) / (VIEWPORT.height - HORIZON_Y) - 1);
+
+/**
+ * 도로 표면/길가의 한 점을 언클램프 원근으로 투영한다.
+ * lateralOffset: 카메라(d=0) 기준 도로 중앙에서의 가로 오프셋(px). 음수=왼쪽, 양수=오른쪽.
+ */
+export function projectSurface(lateralOffset: number, d: number) {
+  const scale = surfaceScale(d);
+  return {
+    x: VANISH_X + lateralOffset * scale,
+    y: HORIZON_Y + (TRUCK_SCREEN_Y - HORIZON_Y) * scale,
+    scale,
+  };
 }
 
 function laneOffsetAtCamera(lane: number): number {
