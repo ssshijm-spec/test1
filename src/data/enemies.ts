@@ -70,7 +70,7 @@ export const BONUS_LANE_CONFIGS: readonly BonusLaneStageConfig[] = [
 export const MINIBOSS_PHASE_FACTORS: readonly [number, number, number] = [0.32, 0.48, 0.62];
 
 export const BOSS_CONFIGS: readonly BossStageConfig[] = [
-  { phaseFactors: [0.08, 0.14, 0.2] }, // Stage1 보스 — 튜토리얼용, 거의 항상 돌파 가능해야 함
+  { phaseFactors: [0.02, 0.04, 0.06] }, // Stage1 보스 — 튜토리얼용, 하위 편차 판까지 거의 항상 돌파 가능해야 함
   { phaseFactors: [0.45, 0.65, 0.85] },
   { phaseFactors: [0.45, 0.65, 0.85] },
   { phaseFactors: [0.45, 0.68, 0.88] },

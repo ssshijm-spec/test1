@@ -51,7 +51,7 @@ export const STAGES: readonly StageDef[] = [
     endReferencePower: 18_300,
     scrollSpeed: 300,
     availableSegments: ['gate3', 'barricade', 'breather'],
-    segmentWeights: { gate3: 52, barricade: 8, breather: 40 },
+    segmentWeights: { gate3: 64, barricade: 8, breather: 28 },
     hasMiniboss: false,
     bossName: '고철 파수꾼',
     bossLore: '폐차장의 마지막 문지기. 녹슬었지만 자리는 지킨다.',

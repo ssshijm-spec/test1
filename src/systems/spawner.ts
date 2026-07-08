@@ -19,7 +19,7 @@ function pickWeightedKind(stage: StageDef, rng: Rng): SegmentType {
   return rng.weightedPick(kinds, weights);
 }
 
-function genGate3(stageIdx: number, rng: Rng): GateSpec[] {
+function genGate3(stageIdx: number, rng: Rng, guaranteeMul = false): GateSpec[] {
   const cfg = GATE_CONFIGS[stageIdx];
   const opNames = ['add', 'sub', 'mul', 'div'] as const;
   const weights = [cfg.opWeights.add, cfg.opWeights.sub, cfg.opWeights.mul, cfg.opWeights.div];
@@ -48,6 +48,13 @@ function genGate3(stageIdx: number, rng: Rng): GateSpec[] {
     }
   }
   if (allBad) {
+    ops[Math.floor(rng.next() * 3)] = 'mul';
+  }
+
+  // 초반 임팩트/공정성 보장: guaranteeMul이면 mul 레인이 하나도 없을 때 한 레인을 mul로 승격한다.
+  // (스테이지1 도입부의 첫 게이트들에 사용 — 곱셈 없는 불운한 시작을 없애 "즉각적인 첫 진화"를 보장하고
+  //  튜토리얼 클리어율의 하위 편차를 제거한다.)
+  if (guaranteeMul && !ops.includes('mul')) {
     ops[Math.floor(rng.next() * 3)] = 'mul';
   }
 
@@ -127,6 +134,12 @@ export function generateStage(stage: StageDef, stageIdx: number, rng: Rng): Trac
 
   let z = spacing * 1.5; // 시작 직후 약간의 여유
   let minibossInserted = false;
+  let gate3Ordinal = 0; // 이 스테이지에서 등장한 gate3 순번(0-based)
+
+  // 첫 스테이지(튜토리얼)의 모든 게이트는 곱셈 레인을 하나 이상 보장한다 — "항상 초록 ×N을 골라라"라는
+  // 핵심 규칙을 가르치고, 즉각적인 첫 진화의 "훅"을 만들며, 곱셈 없이 시작하는 불운한 판을 없애
+  // 튜토리얼 클리어율을 안정화한다. (2번째 스테이지부터는 곱셈 없는 갈림길도 등장해 난도가 붙는다.)
+  const guaranteedMulGates = stageIdx === 0 ? Number.POSITIVE_INFINITY : 0;
 
   while (z < bossStartZ - spacing * 0.5) {
     if (stage.hasMiniboss && !minibossInserted && z >= minibossZ) {
@@ -155,9 +168,12 @@ export function generateStage(stage: StageDef, stageIdx: number, rng: Rng): Trac
     const refPower = referencePowerAt(stage, progress);
 
     switch (kind) {
-      case 'gate3':
-        segments.push({ kind: 'gate3', z, resolved: false, gates: genGate3(stageIdx, rng) as [GateSpec, GateSpec, GateSpec] });
+      case 'gate3': {
+        const guarantee = gate3Ordinal < guaranteedMulGates;
+        gate3Ordinal++;
+        segments.push({ kind: 'gate3', z, resolved: false, gates: genGate3(stageIdx, rng, guarantee) as [GateSpec, GateSpec, GateSpec] });
         break;
+      }
       case 'barricade':
         segments.push({ kind: 'barricade', z, resolved: false, blockedLanes: genBarricade(rng) });
         break;
