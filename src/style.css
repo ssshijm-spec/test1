@@ -1,0 +1,191 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+  color: #fff;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#stage-wrap {
+  position: relative;
+  width: min(100vw, 100vh * (480 / 854));
+  height: min(100vh, 100vw * (854 / 480));
+  background: #0d0d2b;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.icon-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font-size: 13px;
+  z-index: 20;
+  cursor: pointer;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 8, 20, 0.72);
+  z-index: 30;
+  padding: 24px;
+  backdrop-filter: blur(2px);
+}
+
+.screen.hidden {
+  display: none;
+}
+
+.panel {
+  width: 100%;
+  max-width: 380px;
+  background: linear-gradient(160deg, #1c2038, #12142a);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.panel h1 {
+  font-size: 26px;
+  margin-bottom: 12px;
+  background: linear-gradient(90deg, #ffd23d, #ff6b6b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.panel h2 {
+  font-size: 22px;
+  margin-bottom: 14px;
+}
+
+.panel h2.danger {
+  color: #ff6b6b;
+}
+
+.panel h2.legendary {
+  background: linear-gradient(90deg, #c633ff, #ffd23d);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tagline {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #cfd8e6;
+  margin-bottom: 18px;
+}
+
+.howto {
+  text-align: left;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: #b8c4d6;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+
+.lore {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: #d8e0ea;
+  margin-bottom: 16px;
+}
+
+.stage-badge {
+  display: inline-block;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #ffd23d;
+  background: rgba(255, 210, 61, 0.12);
+  border: 1px solid rgba(255, 210, 61, 0.4);
+  border-radius: 20px;
+  padding: 3px 12px;
+  margin-bottom: 10px;
+}
+
+.mechanic-tag {
+  font-size: 12px;
+  color: #7fd3ff;
+  margin-bottom: 22px;
+}
+
+.mechanic-tag::before {
+  content: '신규 메커닉 — ';
+  color: #8a96ab;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+  margin-bottom: 4px;
+}
+
+.stat-row span {
+  color: #9aa6ba;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  margin-top: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, #ffd23d, #ff8a3d);
+  color: #241a05;
+  border: none;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
