@@ -29,6 +29,25 @@ html, body {
   height: min(100vh, 100vw * (854 / 480));
   background: #0d0d2b;
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+/* 스캔라인 + CRT 비네트 오버레이 — 픽셀아트 레트로 감성의 마감. 클릭은 통과시킨다. */
+#stage-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.14) 3px,
+      rgba(0, 0, 0, 0.14) 3px
+    ),
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.45) 100%);
 }
 
 #game-canvas {
@@ -36,6 +55,9 @@ html, body {
   height: 100%;
   display: block;
   touch-action: none;
+  /* 니어리스트 네이버 업스케일 유지 — 도트가 뭉개지지 않고 또렷하게 커진다. */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .icon-btn {
@@ -72,21 +94,22 @@ html, body {
 .panel {
   width: 100%;
   max-width: 380px;
-  background: linear-gradient(160deg, #1c2038, #12142a);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 18px;
+  background: linear-gradient(160deg, #180d33, #0d0820);
+  /* 픽셀아트 톤에 맞춰 각진 네온 보더 */
+  border: 2px solid #5fe0ff;
+  border-radius: 4px;
   padding: 28px 24px;
   text-align: center;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 24px rgba(95, 224, 255, 0.35), 0 12px 40px rgba(0, 0, 0, 0.55);
 }
 
 .panel h1 {
-  font-size: 26px;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: 1px;
   margin-bottom: 12px;
-  background: linear-gradient(90deg, #ffd23d, #ff6b6b);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #ffd23d;
+  text-shadow: 0 0 10px rgba(255, 92, 138, 0.9), 0 0 20px rgba(255, 92, 138, 0.5), 2px 2px 0 #ff3d94;
 }
 
 .panel h2 {

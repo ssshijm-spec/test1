@@ -12,6 +12,7 @@ import { Rng } from './rng';
 import { renderFrame } from '../render/renderer';
 import { HudParams, TierCardInfo } from '../render/drawUI';
 import { laneCenterX, TRUCK_SCREEN_Y } from '../render/layout';
+import { beginPixelFrame, createPixelBuffer, endPixelFrame, PixelBuffer } from '../render/pixel';
 import { ScreenManager } from '../ui/screens';
 
 type GameState = 'menu' | 'intro' | 'playing' | 'stageClear' | 'gameOver' | 'victory' | 'paused';
@@ -25,6 +26,7 @@ interface TierCardState {
 
 export class Engine {
   private ctx: CanvasRenderingContext2D;
+  private pixelBuffer: PixelBuffer;
   private input: InputController;
   private screens: ScreenManager;
 
@@ -53,6 +55,7 @@ export class Engine {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('2D canvas context를 가져올 수 없습니다.');
     this.ctx = ctx;
+    this.pixelBuffer = createPixelBuffer();
     this.input = new InputController(canvas, BALANCE.laneCount);
 
     this.screens = new ScreenManager({
@@ -230,7 +233,9 @@ export class Engine {
       tierCard: this.tierCard ? this.computeTierCardVisual() : null,
     };
 
-    renderFrame(this.ctx, {
+    // 저해상도 픽셀 버퍼에 렌더 → 니어리스트 네이버 업스케일로 레트로 도트 룩.
+    const bctx = beginPixelFrame(this.pixelBuffer);
+    renderFrame(bctx, {
       truck: this.truck,
       segments: this.segments,
       palette: stage.palette,
@@ -238,6 +243,7 @@ export class Engine {
       elapsedMs: this.elapsedMs,
       hud,
     });
+    endPixelFrame(this.pixelBuffer, this.ctx);
   }
 
   private computeTierCardVisual(): TierCardInfo {

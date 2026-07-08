@@ -19,6 +19,8 @@ export interface BiomePalette {
   roadLine: string;
   farLayer: string;
   midLayer: string;
+  /** 네온 사인/창문 액센트 2색 (픽셀 시티 배경용) */
+  neon: [string, string];
 }
 
 export interface StageDef {
@@ -56,11 +58,12 @@ export const STAGES: readonly StageDef[] = [
     bossName: '고철 파수꾼',
     bossLore: '폐차장의 마지막 문지기. 녹슬었지만 자리는 지킨다.',
     palette: {
-      sky: ['#7d6b52', '#c9a876'],
-      ground: '#4a4032',
-      roadLine: '#e8d9b5',
-      farLayer: '#5c4e3a',
-      midLayer: '#6b5a43',
+      sky: ['#1a0f2e', '#3d2a4d'],
+      ground: '#160f22',
+      roadLine: '#ffb347',
+      farLayer: '#2a1c3d',
+      midLayer: '#3d2a52',
+      neon: ['#ffb347', '#ff5c8a'],
     },
   },
   {
@@ -79,11 +82,12 @@ export const STAGES: readonly StageDef[] = [
     bossName: '국도의 폭주족 두목',
     bossLore: '이 국도에서는 내가 제일 빠르다고 믿는 남자.',
     palette: {
-      sky: ['#4f6fa8', '#bcd6ea'],
-      ground: '#39433f',
-      roadLine: '#f0f0e6',
-      farLayer: '#354a63',
-      midLayer: '#425c4f',
+      sky: ['#0d1a33', '#1c3a5c'],
+      ground: '#0a1420',
+      roadLine: '#5fe0ff',
+      farLayer: '#16283f',
+      midLayer: '#20405c',
+      neon: ['#5fe0ff', '#ffd23d'],
     },
   },
   {
@@ -102,11 +106,12 @@ export const STAGES: readonly StageDef[] = [
     bossName: '통행세 징수관',
     bossLore: '이 구역을 지나려면 전력으로 증명해야 한다.',
     palette: {
-      sky: ['#665a5a', '#a68b6e'],
-      ground: '#332e2e',
-      roadLine: '#d9c9a3',
-      farLayer: '#4a3f3f',
-      midLayer: '#5c4f47',
+      sky: ['#0d1f1f', '#1c3d3a'],
+      ground: '#0a1616',
+      roadLine: '#4dffce',
+      farLayer: '#153330',
+      midLayer: '#1e4d42',
+      neon: ['#4dffce', '#ff8a3d'],
     },
   },
   {
@@ -133,11 +138,12 @@ export const STAGES: readonly StageDef[] = [
     bossName: '사막의 폭주 트레일러',
     bossLore: '모래바람 속에서도 흔들림 없이 질주하는 거구.',
     palette: {
-      sky: ['#c96b2e', '#f4c873'],
-      ground: '#8a5a2e',
-      roadLine: '#fff0cf',
-      farLayer: '#a06a35',
-      midLayer: '#b8813f',
+      sky: ['#1c0d33', '#ff5c8a'],
+      ground: '#1a0d2e',
+      roadLine: '#ffd23d',
+      farLayer: '#3d1a52',
+      midLayer: '#5c2478',
+      neon: ['#ff5c8a', '#5fe0ff'],
     },
   },
   {
@@ -173,11 +179,12 @@ export const STAGES: readonly StageDef[] = [
     bossName: '러시아워의 폭군',
     bossLore: '도심 교통을 지배하는 검은 세단. 신호는 무시한다.',
     palette: {
-      sky: ['#2e3a52', '#6b7fa8'],
-      ground: '#22262f',
-      roadLine: '#e0e6f0',
-      farLayer: '#2a3242',
-      midLayer: '#354258',
+      sky: ['#0d0d2e', '#2a1a5c'],
+      ground: '#0a0a1f',
+      roadLine: '#5fe0ff',
+      farLayer: '#1a1a47',
+      midLayer: '#2e2470',
+      neon: ['#ff3d94', '#5fe0ff'],
     },
   },
   {
@@ -213,11 +220,12 @@ export const STAGES: readonly StageDef[] = [
     bossName: '빙하의 파괴자',
     bossLore: '얼어붙은 강철 그 자체. 부딪히는 모든 것을 부순다.',
     palette: {
-      sky: ['#1c3550', '#7fb8d9'],
-      ground: '#dce8f0',
-      roadLine: '#2c3e50',
-      farLayer: '#274a63',
-      midLayer: '#31597a',
+      sky: ['#0d1f33', '#2a5c7a'],
+      ground: '#16303d',
+      roadLine: '#aef0ff',
+      farLayer: '#1c3d52',
+      midLayer: '#2a5c78',
+      neon: ['#aef0ff', '#5f8fff'],
     },
   },
   {
@@ -253,11 +261,12 @@ export const STAGES: readonly StageDef[] = [
     bossName: '오버드라이브 코어',
     bossLore: '도로의 끝에서 기다리는 존재. 숫자로 이루어진 최후의 벽.',
     palette: {
-      sky: ['#0d0d2b', '#4a1a6b'],
-      ground: '#141428',
+      sky: ['#0d0524', '#5c1a8f'],
+      ground: '#0a0418',
       roadLine: '#ff5fd6',
-      farLayer: '#1e1a3a',
-      midLayer: '#2e2050',
+      farLayer: '#1e0d3d',
+      midLayer: '#3d1a6b',
+      neon: ['#ff5fd6', '#5fe0ff'],
     },
   },
 ];
