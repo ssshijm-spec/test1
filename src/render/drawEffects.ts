@@ -1,6 +1,7 @@
 import { EffectPool } from '../entities/particle';
 
-export function drawEffects(ctx: CanvasRenderingContext2D, effects: EffectPool) {
+/** 파티클(도형) — 픽셀 버퍼 레이어. */
+export function drawParticles(ctx: CanvasRenderingContext2D, effects: EffectPool) {
   for (const p of effects.getParticles()) {
     const t = p.life / p.maxLife;
     const alpha = p.alphaFade ? Math.max(0, t) : 1;
@@ -35,17 +36,21 @@ export function drawEffects(ctx: CanvasRenderingContext2D, effects: EffectPool) 
     }
     ctx.restore();
   }
+}
 
+/** 숫자 팝업(+25% / ×3 / −500 등) — 풀 해상도 레이어라 선명하게 읽힌다. */
+export function drawPopups(ctx: CanvasRenderingContext2D, effects: EffectPool) {
   for (const p of effects.getPopups()) {
     const t = p.life / p.maxLife;
     ctx.save();
     ctx.globalAlpha = Math.max(0, t);
-    ctx.fillStyle = p.color;
-    ctx.font = `bold ${p.size}px "Segoe UI", sans-serif`;
+    ctx.font = `bold ${p.size}px "Segoe UI", "Malgun Gothic", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur = 6;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+    ctx.strokeText(p.text, p.x, p.y);
+    ctx.fillStyle = p.color;
     ctx.fillText(p.text, p.x, p.y);
     ctx.restore();
   }

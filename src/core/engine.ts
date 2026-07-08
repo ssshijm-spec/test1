@@ -9,7 +9,7 @@ import { checkEvolution } from '../systems/evolution';
 import { JuiceSystem } from '../systems/juice';
 import { InputController } from './input';
 import { Rng } from './rng';
-import { renderFrame } from '../render/renderer';
+import { renderOverlay, renderWorld } from '../render/renderer';
 import { HudParams, TierCardInfo } from '../render/drawUI';
 import { laneCenterX, TRUCK_SCREEN_Y } from '../render/layout';
 import { beginPixelFrame, createPixelBuffer, endPixelFrame, PixelBuffer } from '../render/pixel';
@@ -233,17 +233,22 @@ export class Engine {
       tierCard: this.tierCard ? this.computeTierCardVisual() : null,
     };
 
-    // 저해상도 픽셀 버퍼에 렌더 → 니어리스트 네이버 업스케일로 레트로 도트 룩.
-    const bctx = beginPixelFrame(this.pixelBuffer);
-    renderFrame(bctx, {
+    const params = {
       truck: this.truck,
       segments: this.segments,
       palette: stage.palette,
       juice: this.juice,
       elapsedMs: this.elapsedMs,
       hud,
-    });
+    };
+
+    // 1) 세계(도형)는 저해상도 픽셀 버퍼에 그린 뒤 니어리스트 네이버 업스케일 → 레트로 도트 룩.
+    const bctx = beginPixelFrame(this.pixelBuffer);
+    renderWorld(bctx, params);
     endPixelFrame(this.pixelBuffer, this.ctx);
+
+    // 2) 텍스트/HUD는 풀 해상도 캔버스에 선명하게 덧그린다 → 가독성 확보.
+    renderOverlay(this.ctx, params);
   }
 
   private computeTierCardVisual(): TierCardInfo {
