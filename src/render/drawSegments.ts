@@ -67,37 +67,142 @@ function gateText(ctx: CanvasRenderingContext2D, lane: number, d: number, color:
   ctx.restore();
 }
 
-function drawWall(ctx: CanvasRenderingContext2D, lane: number, d: number, color: string) {
-  const { x, y, scale } = projectTrackPoint(lane, d);
-  const w = (TRACK_WIDTH / 3 - 6) * scale;
-  const h = 48 * scale;
-  ctx.save();
-  ctx.fillStyle = color;
-  ctx.fillRect(x - w / 2, y - h / 2, w, h);
-  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-  ctx.lineWidth = Math.max(1, 2 * scale);
-  for (let i = -2; i <= 2; i++) {
-    ctx.beginPath();
-    ctx.moveTo(x - w / 2, y + (i * h) / 5);
-    ctx.lineTo(x + w / 2, y + (i * h) / 5);
-    ctx.stroke();
-  }
-  ctx.restore();
+/** 라바콘 하나(밑변 기준점 bx,by). 주황 원뿔 + 흰 반사 밴드 + 베이스. */
+function drawCone(ctx: CanvasRenderingContext2D, bx: number, by: number, s: number) {
+  const h = 34 * s;
+  const bw = 22 * s;
+  // 베이스 슬래브
+  ctx.fillStyle = '#141018';
+  ctx.beginPath();
+  ctx.ellipse(bx, by, bw * 0.55, bw * 0.16, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#12223a';
+  ctx.fillRect(bx - bw * 0.5, by - 2 * s, bw, 3 * s);
+  // 원뿔 몸통(사다리꼴)
+  ctx.fillStyle = '#ff6a1a';
+  ctx.beginPath();
+  ctx.moveTo(bx - bw * 0.42, by);
+  ctx.lineTo(bx + bw * 0.42, by);
+  ctx.lineTo(bx + bw * 0.1, by - h);
+  ctx.lineTo(bx - bw * 0.1, by - h);
+  ctx.closePath();
+  ctx.fill();
+  // 밝은 좌측 하이라이트
+  ctx.fillStyle = '#ff8c42';
+  ctx.beginPath();
+  ctx.moveTo(bx - bw * 0.42, by);
+  ctx.lineTo(bx - bw * 0.16, by);
+  ctx.lineTo(bx - bw * 0.02, by - h);
+  ctx.lineTo(bx - bw * 0.1, by - h);
+  ctx.closePath();
+  ctx.fill();
+  // 흰 반사 밴드 2개
+  ctx.fillStyle = '#f4f4ee';
+  ctx.beginPath();
+  ctx.moveTo(bx - bw * 0.32, by - h * 0.32);
+  ctx.lineTo(bx + bw * 0.32, by - h * 0.32);
+  ctx.lineTo(bx + bw * 0.26, by - h * 0.5);
+  ctx.lineTo(bx - bw * 0.26, by - h * 0.5);
+  ctx.closePath();
+  ctx.fill();
+  // 꼭대기
+  ctx.fillStyle = '#ff6a1a';
+  ctx.fillRect(bx - bw * 0.1, by - h - 2 * s, bw * 0.2, 3 * s);
 }
 
-function enemyBox(ctx: CanvasRenderingContext2D, lane: number, d: number) {
+/** 막힌 레인의 라바콘 클러스터(2~3개). */
+function drawCones(ctx: CanvasRenderingContext2D, lane: number, d: number) {
   const { x, y, scale } = projectTrackPoint(lane, d);
+  const spread = (TRACK_WIDTH / 3) * 0.28 * scale;
+  drawCone(ctx, x - spread, y + 6 * scale, scale);
+  drawCone(ctx, x + spread, y + 6 * scale, scale);
+  drawCone(ctx, x, y - 5 * scale, scale * 0.92);
+}
+
+/** 진입금지 바리어 — 두 기둥 위 빨강/흰 스트라이프 보드 + 상단 금지 표지판. 이동 불가 장애물. */
+function drawBarrier(ctx: CanvasRenderingContext2D, lane: number, d: number) {
+  const { x, y, scale } = projectTrackPoint(lane, d);
+  const w = (TRACK_WIDTH / 3 - 8) * scale;
+  const boardH = 16 * scale;
+  const boardY = y - 4 * scale;
+  const legH = 26 * scale;
+  // 기둥
+  ctx.fillStyle = '#3a3a44';
+  ctx.fillRect(x - w * 0.42, boardY, 4 * scale, legH);
+  ctx.fillRect(x + w * 0.42 - 4 * scale, boardY, 4 * scale, legH);
+  // 보드 배경
+  ctx.fillStyle = '#f4f4ee';
+  ctx.fillRect(x - w / 2, boardY - boardH, w, boardH);
+  // 빨강 대각 스트라이프
   ctx.save();
-  ctx.fillStyle = '#c0392b';
-  const w = TRACK_WIDTH * 0.18 * scale;
-  const h = 46 * scale;
   ctx.beginPath();
-  ctx.roundRect(x - w / 2, y - h / 2, w, h, 8 * scale);
+  ctx.rect(x - w / 2, boardY - boardH, w, boardH);
+  ctx.clip();
+  ctx.fillStyle = '#e5352b';
+  const stripe = 10 * scale;
+  for (let sx = x - w / 2 - boardH; sx < x + w / 2; sx += stripe * 2) {
+    ctx.beginPath();
+    ctx.moveTo(sx, boardY);
+    ctx.lineTo(sx + stripe, boardY);
+    ctx.lineTo(sx + stripe + boardH, boardY - boardH);
+    ctx.lineTo(sx + boardH, boardY - boardH);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+  ctx.strokeStyle = '#1a1a22';
+  ctx.lineWidth = Math.max(1, 1.5 * scale);
+  ctx.strokeRect(x - w / 2, boardY - boardH, w, boardH);
+  // 상단 진입금지 표지판(빨강 원 + 흰 가로바)
+  const r = 9 * scale;
+  const signY = boardY - boardH - r - 3 * scale;
+  ctx.fillStyle = '#e5352b';
+  ctx.beginPath();
+  ctx.arc(x, signY, r, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillStyle = '#f4f4ee';
+  ctx.fillRect(x - r * 0.62, signY - r * 0.22, r * 1.24, r * 0.44);
+}
+
+/** 뒤에서 본 적 차량(느리게 달리는 차) — 숫자 대결 상대. 위 숫자는 라벨 레이어에서. */
+function enemyCar(ctx: CanvasRenderingContext2D, lane: number, d: number) {
+  const { x, y, scale } = projectTrackPoint(lane, d);
+  const w = TRACK_WIDTH * 0.2 * scale;
+  const h = 44 * scale;
+  const top = y - h / 2;
+  const bot = y + h / 2;
+  // 몸체(위 좁고 아래 넓은 자동차 실루엣)
+  ctx.fillStyle = '#b0332a';
+  ctx.beginPath();
+  ctx.moveTo(x - w * 0.32, top);
+  ctx.lineTo(x + w * 0.32, top);
+  ctx.quadraticCurveTo(x + w * 0.5, top + h * 0.2, x + w * 0.5, y);
+  ctx.lineTo(x + w * 0.46, bot);
+  ctx.lineTo(x - w * 0.46, bot);
+  ctx.lineTo(x - w * 0.5, y);
+  ctx.quadraticCurveTo(x - w * 0.5, top + h * 0.2, x - w * 0.32, top);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#6e1f19';
   ctx.lineWidth = Math.max(1, 2 * scale);
   ctx.stroke();
-  ctx.restore();
+  // 볼륨 음영
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.fillRect(x - w * 0.46, y + h * 0.16, w * 0.92, h * 0.16);
+  // 리어 글라스
+  ctx.fillStyle = '#12203a';
+  ctx.fillRect(x - w * 0.24, top + h * 0.06, w * 0.48, h * 0.16);
+  // 테일라이트
+  ctx.fillStyle = '#ff3b3b';
+  ctx.fillRect(x - w * 0.42, y + h * 0.02, w * 0.16, h * 0.1);
+  ctx.fillRect(x + w * 0.26, y + h * 0.02, w * 0.16, h * 0.1);
+  // 범퍼
+  ctx.fillStyle = '#5a1a14';
+  ctx.fillRect(x - w * 0.48, bot - h * 0.1, w * 0.96, h * 0.1);
+  // 타이어(백뷰)
+  ctx.fillStyle = '#0c0c10';
+  ctx.fillRect(x - w * 0.54, y + h * 0.12, w * 0.14, h * 0.24);
+  ctx.fillRect(x + w * 0.4, y + h * 0.12, w * 0.14, h * 0.24);
 }
 
 function enemyText(ctx: CanvasRenderingContext2D, lane: number, d: number, power: number) {
@@ -169,13 +274,13 @@ function drawSegmentLayer(ctx: CanvasRenderingContext2D, segment: TrackSegment, 
       }
       break;
     case 'barricade':
-      if (shape) for (let lane = 0; lane < 3; lane++) if (segment.blockedLanes[lane]) drawWall(ctx, lane, d, '#b0503a');
+      if (shape) for (let lane = 0; lane < 3; lane++) if (segment.blockedLanes[lane]) drawCones(ctx, lane, d);
       break;
     case 'enemy':
       for (let lane = 0; lane < 3; lane++) {
         const p = segment.lanePower[lane];
         if (p === null) continue;
-        if (shape) enemyBox(ctx, lane, d);
+        if (shape) enemyCar(ctx, lane, d);
         else enemyText(ctx, lane, d, p);
       }
       break;
@@ -188,7 +293,7 @@ function drawSegmentLayer(ctx: CanvasRenderingContext2D, segment: TrackSegment, 
       break;
     }
     case 'narrow':
-      if (shape) for (let lane = 0; lane < 3; lane++) if (lane !== segment.openLane) drawWall(ctx, lane, d, '#7a8a99');
+      if (shape) for (let lane = 0; lane < 3; lane++) if (lane !== segment.openLane) drawBarrier(ctx, lane, d);
       break;
     case 'bonusLane':
       for (let lane = 0; lane < 3; lane++) {

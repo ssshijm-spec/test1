@@ -24,39 +24,48 @@ function shade(hex: string, f: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-/** 빠르게 도는 바퀴 — 타이어 + 림 + 모션블러 밴드. */
-function drawWheel(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, elapsedMs: number) {
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
+/**
+ * 백뷰 타이어 — 전진하는 차를 뒤에서 보면 뒷바퀴는 "뒤 트레드 면"이 보인다(옆면 허브가 아니라).
+ * 그래서 허브 없는 둥근 사각으로 그리고, 트레드 홈이 아래로 흘러(전진) 굴러가는 느낌을 준다.
+ */
+function drawTire(ctx: CanvasRenderingContext2D, x: number, y: number, tw: number, th: number, elapsedMs: number) {
+  const rad = Math.min(tw, th) * 0.36;
   ctx.fillStyle = '#0c0c10';
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, TAU);
+  roundRect(ctx, x - tw / 2, y - th / 2, tw, th, rad);
   ctx.fill();
-  // 림
-  ctx.fillStyle = '#3a3a46';
-  ctx.beginPath();
-  ctx.arc(x, y, r * 0.55, 0, TAU);
-  ctx.fill();
-  // 모션블러 밴드(위로 흐름)
+
   ctx.save();
-  ctx.beginPath();
-  ctx.arc(x, y, r * 0.94, 0, TAU);
+  roundRect(ctx, x - tw / 2, y - th / 2, tw, th, rad);
   ctx.clip();
-  const band = r * 0.7;
-  const off = (elapsedMs * 0.1) % band;
-  ctx.strokeStyle = 'rgba(160,165,180,0.4)';
-  ctx.lineWidth = Math.max(1, r * 0.16);
-  for (let i = -2; i <= 2; i++) {
-    const yy = y - off + i * band;
+  const band = th * 0.4;
+  const off = (elapsedMs * 0.13) % band; // 아래로 흐름 = 전진
+  ctx.strokeStyle = 'rgba(150,155,170,0.4)';
+  ctx.lineWidth = Math.max(1, th * 0.12);
+  for (let i = -1; i <= 3; i++) {
+    const yy = y - th / 2 + off + i * band;
     ctx.beginPath();
-    ctx.moveTo(x - r, yy);
-    ctx.lineTo(x + r, yy);
+    ctx.moveTo(x - tw / 2, yy);
+    ctx.lineTo(x + tw / 2, yy);
     ctx.stroke();
   }
   ctx.restore();
-  // 허브 캡
-  ctx.fillStyle = '#8a8a98';
-  ctx.beginPath();
-  ctx.arc(x, y, r * 0.2, 0, TAU);
-  ctx.fill();
+
+  // 사이드월 하이라이트(둥근 고무 느낌)
+  ctx.strokeStyle = '#2a2a34';
+  ctx.lineWidth = Math.max(1, th * 0.1);
+  roundRect(ctx, x - tw / 2 + 1, y - th / 2 + 1, tw - 2, th - 2, rad * 0.8);
+  ctx.stroke();
 }
 
 /** 후미로 흘러나가는 배기 스모크(항상) + 화염(고티어). */
@@ -128,10 +137,6 @@ function drawCar(ctx: CanvasRenderingContext2D, v: Visual, w: number, l: number,
   drawExhaust(ctx, v, w, l, elapsedMs);
 
   const rearR = 7.5 * v.wheelSize;
-  // 앞바퀴(멀리, 작게 — 살짝만 보임)
-  drawWheel(ctx, -w * 0.46, -l * 0.16, rearR * 0.7, elapsedMs);
-  drawWheel(ctx, w * 0.46, -l * 0.16, rearR * 0.7, elapsedMs);
-
   // 본체 채우기
   carPath(ctx, w, l);
   ctx.fillStyle = v.bodyColor;
@@ -236,15 +241,21 @@ function drawCar(ctx: CanvasRenderingContext2D, v: Visual, w: number, l: number,
     ctx.fill();
   }
 
-  // 뒷바퀴(펜더 아치 안, 아래로 삐져나옴) — 본체 위에 그려 타이어가 밖으로 보이게
-  const rw = rearR * 1.15;
+  // 뒷바퀴(백뷰 타이어) — 펜더 아치 안, 아래로 삐져나옴. 본체 위에 그려 타이어가 밖으로 보이게.
+  const tw = rearR * 1.5;
+  const th = rearR * 1.7;
+  const tyre = hipY + l * 0.12;
   for (const sx of [-w * 0.5, w * 0.5]) {
-    drawWheel(ctx, sx, hipY + l * 0.06, rw, elapsedMs);
-    // 펜더 아치 림(위쪽 반원)
+    drawTire(ctx, sx, tyre, tw, th, elapsedMs);
+    // 펜더 아치 립(타이어 위를 덮는 반원)
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    ctx.arc(sx, tyre - th * 0.1, tw * 0.66, Math.PI, TAU);
+    ctx.fill();
     ctx.strokeStyle = accentDark;
     ctx.lineWidth = Math.max(1.5, v.outline);
     ctx.beginPath();
-    ctx.arc(sx, hipY + l * 0.06, rw + 1.5, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.arc(sx, tyre - th * 0.1, tw * 0.66, Math.PI, TAU);
     ctx.stroke();
   }
 }
@@ -252,9 +263,9 @@ function drawCar(ctx: CanvasRenderingContext2D, v: Visual, w: number, l: number,
 /** 초기 티어용 러프한 소형차(손수레/삼륜) — 조금 조잡하지만 의도된 "고철" 느낌. */
 function drawEarly(ctx: CanvasRenderingContext2D, v: Visual, w: number, l: number, elapsedMs: number, trike: boolean) {
   const rearR = 6.5 * v.wheelSize;
-  if (trike) drawWheel(ctx, 0, -l * 0.36, rearR * 0.85, elapsedMs);
-  drawWheel(ctx, -w * 0.42, l * 0.28, rearR, elapsedMs);
-  drawWheel(ctx, w * 0.42, l * 0.28, rearR, elapsedMs);
+  if (trike) drawTire(ctx, 0, -l * 0.32, rearR, rearR * 1.2, elapsedMs);
+  drawTire(ctx, -w * 0.42, l * 0.3, rearR * 1.3, rearR * 1.5, elapsedMs);
+  drawTire(ctx, w * 0.42, l * 0.3, rearR * 1.3, rearR * 1.5, elapsedMs);
 
   const dark = shade(v.bodyColor, 0.62);
   // 몸체(위 좁고 아래 넓은 사다리꼴)
