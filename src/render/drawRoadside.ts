@@ -14,7 +14,7 @@ function hash(n: number): number {
 
 /** 카메라(d=0) 기준 도로 가장자리 바깥쪽 가로 오프셋(px). */
 const SIDE_OFFSET = TRACK_WIDTH / 2 + 24;
-const SPACING = 190;
+const SPACING = 230;
 
 type PropType = 'light' | 'sign' | 'pillar';
 
@@ -40,29 +40,28 @@ function drawLight(ctx: CanvasRenderingContext2D, x: number, y: number, s: numbe
   const armX1 = x + armDir * armLen;
   ctx.fillRect(Math.round(Math.min(armX0, armX1)), Math.round(topY), Math.round(armLen), Math.max(1, Math.round(3 * s)));
 
-  // 램프 글로우 + 코어
+  // 램프 글로우(계단식 솔리드 — 하드 엣지) + 코어
   const lampX = armX1;
   const lampY = topY + 3 * s;
-  const glow = ctx.createRadialGradient(lampX, lampY, 1, lampX, lampY, 16 * s);
-  glow.addColorStop(0, neon + 'cc');
-  glow.addColorStop(1, neon + '00');
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(lampX, lampY, 16 * s, 0, Math.PI * 2);
-  ctx.fill();
+  const prevAlpha = ctx.globalAlpha;
   ctx.fillStyle = neon;
+  ctx.globalAlpha = prevAlpha * 0.22;
+  ctx.beginPath();
+  ctx.arc(lampX, lampY, 12 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = prevAlpha * 0.4;
+  ctx.beginPath();
+  ctx.arc(lampX, lampY, 6 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = prevAlpha;
   ctx.fillRect(Math.round(lampX - 2.5 * s), Math.round(lampY - 2 * s), Math.max(2, Math.round(5 * s)), Math.max(2, Math.round(4 * s)));
 
-  // 노면에 떨어지는 은은한 빛웅덩이
-  ctx.globalAlpha = 0.18;
-  const pool = ctx.createRadialGradient(lampX, y, 1, lampX, y, 26 * s);
-  pool.addColorStop(0, neon);
-  pool.addColorStop(1, neon + '00');
-  ctx.fillStyle = pool;
+  // 노면에 떨어지는 은은한 빛웅덩이(계단식 솔리드)
+  ctx.globalAlpha = prevAlpha * 0.16;
   ctx.beginPath();
-  ctx.ellipse(lampX, y, 26 * s, 9 * s, 0, 0, Math.PI * 2);
+  ctx.ellipse(lampX, y, 22 * s, 7 * s, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = prevAlpha;
 }
 
 function drawSign(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, neon: string) {
@@ -100,13 +99,16 @@ function drawPillar(ctx: CanvasRenderingContext2D, x: number, y: number, s: numb
   ctx.fillStyle = neon;
   ctx.fillRect(Math.round(x - pw / 2 - 2 * s), Math.round(topY), Math.round(pw + 4 * s), Math.round(ph));
   ctx.globalAlpha = 1;
-  // 본체 (위아래 네온 → 가운데 어둡게, 세로 그라디언트)
-  const grad = ctx.createLinearGradient(0, topY, 0, y);
-  grad.addColorStop(0, neon);
-  grad.addColorStop(0.5, '#12122a');
-  grad.addColorStop(1, neon);
-  ctx.fillStyle = grad;
-  ctx.fillRect(Math.round(x - pw / 2), Math.round(topY), Math.round(pw), Math.round(ph));
+  // 본체 (위아래 네온 / 가운데 어둡게 — 솔리드 3분할, 하드 엣지)
+  const px = Math.round(x - pw / 2);
+  const bw = Math.round(pw);
+  const seg = ph / 3;
+  ctx.fillStyle = neon;
+  ctx.fillRect(px, Math.round(topY), bw, Math.round(seg));
+  ctx.fillStyle = '#12122a';
+  ctx.fillRect(px, Math.round(topY + seg), bw, Math.round(seg));
+  ctx.fillStyle = neon;
+  ctx.fillRect(px, Math.round(topY + seg * 2), bw, Math.round(seg));
 }
 
 export function drawRoadside(ctx: CanvasRenderingContext2D, palette: BiomePalette, truckDistance: number) {

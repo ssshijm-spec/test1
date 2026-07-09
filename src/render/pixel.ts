@@ -5,10 +5,10 @@ import { VIEWPORT } from '../data/balance';
  * 실제 캔버스로 정수배 업스케일(니어리스트 네이버)한다. 이 한 단계가 부드러운 벡터 그림을 즉시
  * "도트가 큼직한" 레트로 룩으로 바꿔준다.
  *
- * PIXEL_SCALE이 클수록 도트가 커지고 해상도가 낮아진다. 2 => 240×427 버퍼(가독성/레트로 균형점).
- * 상수만 바꾸면 도트 크기를 조절할 수 있다(3으로 올리면 더 거칠고 복고적).
+ * PIXEL_SCALE이 클수록 도트가 커지고 해상도가 낮아진다. 3 => 160×285 버퍼(큼직한 도트, 아웃런/신스웨이브 룩).
+ * 텍스트는 풀 해상도 오버레이(renderOverlay)로 따로 그리므로 이 값을 올려도 가독성은 유지된다.
  */
-export const PIXEL_SCALE = 2;
+export const PIXEL_SCALE = 3;
 
 export const BUFFER_W = Math.round(VIEWPORT.width / PIXEL_SCALE);
 export const BUFFER_H = Math.round(VIEWPORT.height / PIXEL_SCALE);

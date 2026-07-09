@@ -83,11 +83,99 @@ function drawStars(ctx: CanvasRenderingContext2D, scrollX: number) {
   ctx.globalAlpha = 1;
 }
 
+/** 원근 투영 y (언클램프) — 그리드/도로 표면 계산용. */
+function yAt(d: number): number {
+  return HORIZON_Y + (TRUCK_SCREEN_Y - HORIZON_Y) * surfaceScale(d);
+}
+
+/** 아웃런식 대형 밴딩 선셋 태양 — 가로 색 밴드 + 아래쪽 블라인드 컷. 소실점 뒤 지평선에 앉는다. */
+function drawSun(ctx: CanvasRenderingContext2D, palette: BiomePalette) {
+  const r = VIEWPORT.width * 0.26;
+  const cx = VANISH_X;
+  const cy = HORIZON_Y - r * 0.12;
+  const bands = ['#fff45f', '#ffe14d', '#ffb347', '#ff7a5c', '#ff5c8a', '#ff3d94'];
+  const top = cy - r;
+  const full = 2 * r;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.clip();
+  // 가로 색 밴드(하드 엣지)
+  for (let i = 0; i < bands.length; i++) {
+    ctx.fillStyle = bands[i];
+    ctx.fillRect(cx - r, top + (full * i) / bands.length, 2 * r, full / bands.length + 1);
+  }
+  // 아래쪽 블라인드 컷(간격이 아래로 갈수록 넓어짐) — 지평선 근처만 보인다
+  ctx.fillStyle = palette.sky[1];
+  let gy = top + full * 0.36;
+  let gh = 2;
+  while (gy < cy + r) {
+    ctx.fillRect(cx - r, gy, 2 * r, gh);
+    gy += gh + Math.max(4, gh * 1.6);
+    gh += 1.5;
+  }
+  ctx.restore();
+}
+
+/**
+ * 신스웨이브 네온 그리드 바닥 — 지면 위에 원근 격자(가로 스크롤선 + 소실점 방사선 + 청록/마젠타
+ * 교차 밴드)를 깔아 아웃런 감성을 낸다. 이후 도로 사다리꼴이 중앙을 덮어 양옆에만 그리드가 남는다.
+ */
+function drawNeonGrid(ctx: CanvasRenderingContext2D, palette: BiomePalette, truckDistance: number) {
+  const w = VIEWPORT.width;
+  const c0 = palette.neon[0];
+  const c1 = palette.neon[1];
+  const sp = 62; // 가로선 월드 간격
+  const phase = mod(truckDistance, sp);
+
+  let d0 = -phase;
+  while (d0 > NEAR_D) d0 -= sp;
+  let row = Math.round((d0 + phase) / sp);
+
+  // 가로 교차 밴드 + 가로선
+  while (d0 < MAX_DRAW_DISTANCE) {
+    const dN = Math.max(NEAR_D, d0);
+    const dF = d0 + sp;
+    if (dF > NEAR_D) {
+      const yN = yAt(dN); // 가까운(아래) 가장자리
+      const yF = yAt(dF); // 먼(위) 가장자리
+      ctx.globalAlpha = 0.13;
+      ctx.fillStyle = row % 2 === 0 ? c0 : c1;
+      ctx.fillRect(0, yF, w, yN - yF);
+      // 가로선(먼 쪽 경계)
+      ctx.globalAlpha = Math.min(0.85, 0.2 + surfaceScale(dF) * 0.8);
+      ctx.strokeStyle = c0;
+      ctx.lineWidth = Math.max(1, 1.6 * surfaceScale(dF));
+      ctx.beginPath();
+      ctx.moveTo(0, yF);
+      ctx.lineTo(w, yF);
+      ctx.stroke();
+    }
+    d0 += sp;
+    row++;
+  }
+
+  // 소실점에서 화면 바닥으로 뻗는 방사(세로) 선
+  ctx.globalAlpha = 0.55;
+  ctx.strokeStyle = c0;
+  ctx.lineWidth = 1.5;
+  const cols = 12;
+  for (let i = 0; i <= cols; i++) {
+    const bx = (w / cols) * i;
+    ctx.beginPath();
+    ctx.moveTo(VANISH_X, HORIZON_Y);
+    ctx.lineTo(bx, VIEWPORT.height);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
 export function drawRoad(ctx: CanvasRenderingContext2D, palette: BiomePalette, truckDistance: number) {
   const w = VIEWPORT.width;
   const h = VIEWPORT.height;
 
-  // 밤하늘 (2색 그라디언트 — 저해상도 버퍼에서 자연스럽게 밴딩되어 레트로 느낌)
+  // 밤하늘 (2색 그라디언트 — 저해상도 버퍼에서 밴딩되어 레트로 느낌)
   const sky = ctx.createLinearGradient(0, 0, 0, HORIZON_Y);
   sky.addColorStop(0, palette.sky[0]);
   sky.addColorStop(1, palette.sky[1]);
@@ -95,15 +183,9 @@ export function drawRoad(ctx: CanvasRenderingContext2D, palette: BiomePalette, t
   ctx.fillRect(0, 0, w, HORIZON_Y);
 
   drawStars(ctx, truckDistance);
+  drawSun(ctx, palette);
 
-  // 도심 라이트 블룸 (소실점 위쪽에서 번지는 도시 불빛)
-  const bloom = ctx.createRadialGradient(VANISH_X, HORIZON_Y, 6, VANISH_X, HORIZON_Y, w * 0.5);
-  bloom.addColorStop(0, palette.neon[1] + '66');
-  bloom.addColorStop(1, palette.neon[1] + '00');
-  ctx.fillStyle = bloom;
-  ctx.fillRect(0, 0, w, HORIZON_Y + 20);
-
-  // 픽셀 시티 — 원경(작고 어둡고 창문 적음) → 중경(크고 밝고 네온 사인)
+  // 픽셀 시티 — 원경(작고 어둡고 창문 적음) → 중경(크고 밝고 네온 사인). 태양 앞을 가리는 실루엣.
   drawCityLayer(ctx, {
     y: HORIZON_Y + 2,
     scrollX: truckDistance * 0.05,
@@ -129,11 +211,12 @@ export function drawRoad(ctx: CanvasRenderingContext2D, palette: BiomePalette, t
     neon: palette.neon,
   });
 
-  // 지면(도로 바깥 갓길) — 어두운 밤
+  // 지면(어두운 밤) + 네온 그리드 바닥
   ctx.fillStyle = palette.ground;
   ctx.fillRect(0, HORIZON_Y, w, h - HORIZON_Y);
+  drawNeonGrid(ctx, palette, truckDistance);
 
-  // 원근 도로 본체 — 다크 아스팔트 사다리꼴
+  // 원근 도로 본체 — 다크 아스팔트 사다리꼴(그리드 위에 얹혀 중앙을 덮는다)
   ctx.fillStyle = '#0a0a12';
   ctx.beginPath();
   ctx.moveTo(VANISH_X, HORIZON_Y);
@@ -142,10 +225,8 @@ export function drawRoad(ctx: CanvasRenderingContext2D, palette: BiomePalette, t
   ctx.closePath();
   ctx.fill();
 
-  // 네온 트랙 외곽선 — 은은한 글로우(넓고 흐린 선) 위에 밝은 코어
+  // 네온 트랙 외곽선 + 차선 점선
   drawNeonEdges(ctx, palette.roadLine, h);
-
-  // 네온 차선 점선 — 원근으로 수렴하며 스크롤
   drawNeonLanes(ctx, palette.roadLine, truckDistance);
 }
 
