@@ -14,6 +14,8 @@ export class Truck {
   lastTierId: number;
 
   bobPhase = 0; // 아이들 바운스 애니메이션 위상
+  /** 시각적 조향 기울기(-1=좌 ~ 1=우). 레인 이동 중일 때 차체가 그쪽으로 기운다(banking). */
+  steer = 0;
 
   constructor(startPower: number = BALANCE.startingPower) {
     this.power = startPower;
@@ -26,10 +28,17 @@ export class Truck {
   }
 
   update(dt: number, targetLane: number) {
+    const prevLane = this.lane;
     const diff = targetLane - this.lane;
     const step = BALANCE.laneLerpSpeed * (dt / 1000);
     if (Math.abs(diff) <= step) this.lane = targetLane;
     else this.lane += Math.sign(diff) * step;
+
+    // 이번 프레임 실제 횡이동 속도로 목표 기울기를 잡고, 부드럽게 수렴시킨다(도착하면 0으로 복귀).
+    const secs = dt / 1000 || 0.016;
+    const laneVel = (this.lane - prevLane) / secs; // lanes/sec
+    const targetSteer = Math.max(-1, Math.min(1, laneVel / BALANCE.laneLerpSpeed));
+    this.steer += (targetSteer - this.steer) * Math.min(1, secs * 16);
 
     this.bobPhase += dt / 1000;
     if (this.evolveFxMs > 0) this.evolveFxMs = Math.max(0, this.evolveFxMs - dt);
